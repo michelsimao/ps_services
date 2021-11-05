@@ -16,10 +16,8 @@ $selection = $menu.Item($ans)
 
 $escolhido = Get-Service $selection
 
-
 stop-service $escolhido.Name -force -confirm
 
-get-service $escolhido.name
-
+get-service $selection
 
 
