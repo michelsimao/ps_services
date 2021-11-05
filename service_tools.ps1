@@ -16,18 +16,29 @@ for ($i=1; $i -le $services.count; $i++) {
 
 #Exibe "Enter selection" enquanto um valor menor ou igual a qtde de itens do menu nao for digitado
 do{
-    [int]$sel = Read-Host 'Enter selection'
+    #Aguarda a entrada de dados do usuario
+    [int]$sel = Read-Host "`nEscolha o serviço"
 }
 until($sel -le $number)
 
 #Pega o item do menu escolhido e joga em $selection
 $selection = $menu.Item($sel) 
 
-#Limpa a tela
-Clear-Host
+#Executa o "do" até que um valor valido seja escolhido
+do{
+    #Limpa a tela
+    Clear-Host
+    #Exibe os detalhes do servico escolhido (name, displayname, description, state)
+    Get-WmiObject win32_service -Filter "name='$($selection)'" | format-list Name, Displayname, Description, State
+    #Exibe o menu de opcoes
+    Write-Host "1 - Parar o serviço`n2 - Iniciar o serviço`n3 - Trocar o NAME do serviço`n4 - Trocar o DISPLAYNAME do serviço`n5 - Alterar a DESCRIPTION do serviço`n"
+    #Aguarda a entrada de dados do usuario
+    [int]$opt = Read-Host 'Escolha a opção'
+}
+until($opt -le 5)
 
-#Exibe os detalhes do servico escolhido (name, displayname, description, state)
-Get-WmiObject win32_service -Filter "name='$($selection)'" | format-list Name, Displayname, Description, State
+
+
 
 
 
