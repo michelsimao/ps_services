@@ -1,5 +1,5 @@
 ﻿#busca os servicos com display name comecando com hyper e atribui o resultado a $services
-$services = get-service | Where-Object {$_.displayName -like "hyper*"} 
+$services = get-service | Where-Object {$_.displayName -like "cellular*"} 
 
 #cria uma matriz vazia
 $menu = @{} 
@@ -22,22 +22,33 @@ do{
 until($sel -le $number)
 
 #Pega o item do menu escolhido e joga em $selection
-$selection = $menu.Item($sel) 
+$selected_svc = $menu.Item($sel) 
 
 #Executa o "do" até que um valor valido seja escolhido
 do{
     #Limpa a tela
     Clear-Host
     #Exibe os detalhes do servico escolhido (name, displayname, description, state)
-    Get-WmiObject win32_service -Filter "name='$($selection)'" | format-list Name, Displayname, Description, State
+    Get-WmiObject win32_service -Filter "name='$($selected_svc)'" | format-list Name, Displayname, Description, State
     #Exibe o menu de opcoes
-    Write-Host "1 - Parar o serviço`n2 - Iniciar o serviço`n3 - Trocar o NAME do serviço`n4 - Trocar o DISPLAYNAME do serviço`n5 - Alterar a DESCRIPTION do serviço`n"
+    Write-Host "1 - Parar o serviço`n2 - Iniciar o serviço`n3 - Trocar o NAME do serviço`n4 - Trocar o DISPLAYNAME do serviço`n5 - Alterar a DESCRIPTION do serviço`n6 - Voltar`n"
     #Aguarda a entrada de dados do usuario
     [int]$opt = Read-Host 'Escolha a opção'
 }
 until($opt -le 5)
 
+switch ($opt){
+    1 { stop-service -Name $selected_svc -force }
+    2 { start-service $selected_svc }
+    3 {}
+    4 {}
+    5 {}
+    6 {}
+}
 
+Start-Sleep -seconds 10
+#Exibe os detalhes do servico escolhido (name, displayname, description, state)
+Get-WmiObject win32_service -Filter "name='$($selected_svc)'" | format-list Name, Displayname, Description, State
 
 
 
