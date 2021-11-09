@@ -1,10 +1,21 @@
 ﻿# First function to be executed. Asks for the service name to que queried
 function entryPoint{
-    Clear-Host
     #Request input data
-    $svc = Read-Host "`nInforme o nome de exibição do serviço (display name)"
+    do{
+        Clear-Host
+        $svc = Read-Host "`nInforme o nome de exibição do serviço (display name)"
+    }
+    until($svc)
+    
     #Will search for services by DISPLAYNAME beginning with the data inputted
-    return get-service -ErrorAction SilentlyContinue | Where-Object {$_.displayName -like "$svc*"} ## VALIDAR!!!!
+    $result = get-service -ErrorAction SilentlyContinue | Where-Object {$_.displayName -like "$svc*"} 
+    if($result){
+        return $result
+    }else{
+        write-host "`nServiço não encontrado"
+        Read-Host "Pressione ENTER para continuar"
+        steps
+    }
 }
 
 #----------------------------------------------------------------------------------------------
@@ -37,7 +48,7 @@ function menu1($services){
 
 #Shows the selected service details (name, displayname, description, state)
 function details($selected_svc){
-    Get-WmiObject win32_service -Filter "name='$($selected_svc)'" | format-list Name, Displayname, Description, State
+    Get-WmiObject win32_service -Filter "name='$($selected_svc)'" | format-list Name, Displayname, Description, State, PathName
 }
 
 #----------------------------------------------------------------------------------------------
@@ -63,11 +74,11 @@ function menu2($serv){
         6 { steps; break }
     }
     #Pauses the script for 5 seconds
-    Start-Sleep -seconds 5
+    #Start-Sleep -seconds 5
     #Show the service details
     details($serv)
     #Wait for some key be pressed 
-    Read-Host "`nPressione qualquer tecla para continuar"
+    Read-Host "`nPressione ENTER para continuar"
     steps
 }
 
@@ -95,6 +106,8 @@ function alterDisplayName($svcName){
 #Stops the service
 function stopService($svcName){
     stop-service -Name $svcName -force
+    write-host "Aguarde..."
+    Start-Sleep -seconds 2
 }
 
 #----------------------------------------------------------------------------------------------
@@ -102,6 +115,8 @@ function stopService($svcName){
 #Starts the service
 function startService($svcName){
     start-service $svcName
+    write-host "Aguarde..."
+    Start-Sleep -seconds 2
 }
 
 #----------------------------------------------------------------------------------------------
