@@ -1,86 +1,123 @@
-﻿Clear-Host
-$svc = Read-Host "`nInforme o nome do serviço"
-
-#busca os servicos com display name comecando com hyper e atribui o resultado a $services
-$services = get-service | Where-Object {$_.displayName -like "$svc*"} 
-
-#----------------------------------------------------------------------------------------------
-
-#Monta o MENU 1
-function menu1{
-    #cria uma matriz vazia
-    $menu = @{} 
-    #Como um For/foreach normal, sendo -le = less or equal (<=)
-    for ($i=1; $i -le $services.count; $i++) { 
-        #Exibe o número($i), o display name e o status do servico
-        Write-Host "$i. $($services[$i-1].displayName) - $($services[$i-1].status)" 
-        #Adiciona o item a matriz $menu
-        $menu.Add($i,($services[$i-1].Name))
-        #armazena a qtde de itens do menu para ser utilizada no do/until
-        $number = $menu.Count 
-    }
-    #Exibe "Enter selection" enquanto um valor menor ou igual a qtde de itens do menu nao for digitado
-    do{
-        #Aguarda a entrada de dados do usuario
-        [int]$sel = Read-Host "`nEscolha o serviço"
-    }
-    until($sel -le $number)
-    
-    #Pega o item do menu escolhido e joga em $selected_svc
-    return $menu.Item($sel) 
+﻿# First function to be executed. Asks for the service name to que queried
+function entryPoint{
+    Clear-Host
+    #Request input data
+    $svc = Read-Host "`nInforme o nome de exibição do serviço (display name)"
+    #Will search for services by DISPLAYNAME beginning with the data inputted
+    return get-service -ErrorAction SilentlyContinue | Where-Object {$_.displayName -like "$svc*"} ## VALIDAR!!!!
 }
 
 #----------------------------------------------------------------------------------------------
 
+#Assembles MENU1
+function menu1($services){
+    #Create an empty array
+    $menu = @{} 
+    #Start a counter from 1 to the returned services quantity
+    for ($i=1; $i -le $services.count; $i++) { 
+        #Display the item number($i), the service DISPLAYNAME and the service status
+        Write-Host "$i. $($services[$i-1].displayName) - $($services[$i-1].status)" 
+        #Add the item number and service NAME to the array $menu
+        $menu.Add($i,($services[$i-1].Name))
+        #Set the total items number to $number variable
+        $number = $menu.Count 
+    }
+    #Execute until a valid number is inputed
+    do{
+        #Waits the number to be inputted
+        [int]$sel = Read-Host "`nEscolha o serviço"
+    }
+    until($sel -le $number)
+    
+    #Return the selected item
+    return $menu[$sel]
+}
 
+#----------------------------------------------------------------------------------------------
 
+#Shows the selected service details (name, displayname, description, state)
 function details($selected_svc){
-    #Exibe os detalhes do servico escolhido (name, displayname, description, state)
     Get-WmiObject win32_service -Filter "name='$($selected_svc)'" | format-list Name, Displayname, Description, State
 }
 
 #----------------------------------------------------------------------------------------------
 
-function menu2{
-    #Executa o "do" até que um valor valido seja escolhido
+#Assembles MENU1
+function menu2($serv){
+    #Executes DO untiu some valid value is inputted
     do{
-        #Exibe o menu de opcoes
-        Write-Host "1 - Parar o serviço`n2 - Iniciar o serviço`n3 - Trocar o NAME do serviço`n4 - Trocar o DISPLAYNAME do serviço`n5 - Alterar a DESCRIPTION do serviço`n6 - Voltar`n"
-        #Aguarda a entrada de dados do usuario
+        #Display the menu
+        Write-Host "1 - Parar o serviço`n2 - Iniciar o serviço`n3 - Trocar o NAME do serviço`n4 - Trocar o DISPLAYNAME do serviço`n5 - Alterar a DESCRIPTION do serviço`n6 - Buscar outro serviço`n"
+        #Waits for the user input
         [int]$opt = Read-Host 'Escolha a opção'
     }
-    until($opt -le 5)
-    return $opt
+    until($opt -le 6)
+
+    #Executes the function selected at above menu
+    switch ($opt){
+        1 { stopService($serv); break }
+        2 { startService($serv); break }
+        3 {}
+        4 { alterDisplayName($serv); break }
+        5 { alterDescription($serv); break }
+        6 { steps; break }
+    }
+    #Pauses the script for 5 seconds
+    Start-Sleep -seconds 5
+    #Show the service details
+    details($serv)
+    #Wait for some key be pressed 
+    Read-Host "`nPressione qualquer tecla para continuar"
+    steps
 }
 
 #----------------------------------------------------------------------------------------------
 
-#Clear-Host
-$serv = menu1
-details($serv)
-$action = menu2
+#Changes the service description 
+function alterDescription($svcName){
+    Get-WmiObject win32_service -Filter "name='$($svcName)'" | format-list Description
+    $newDesc = Read-Host "Informe a nova descrição"
+    Set-Service -Name "$svcName" -Description "$newDesc"
+}
 
 #----------------------------------------------------------------------------------------------
 
+#Changes the service Display Name
+function alterDisplayName($svcName){
+    Get-WmiObject win32_service -Filter "name='$($svcName)'" | format-list Displayname
+    $newDisplay = Read-Host "Informe o novo Display Name"
+    Set-Service -Name "$svcName" -DisplayName "$newDisplay"
+}
+
+
+#----------------------------------------------------------------------------------------------
+
+#Stops the service
 function stopService($svcName){
     stop-service -Name $svcName -force
 }
 
+#----------------------------------------------------------------------------------------------
+
+#Starts the service
 function startService($svcName){
     start-service $svcName
 }
 
-switch ($action){
-    1 { stopService($serv); break }
-    2 { startService($serv); break }
-    3 {}
-    4 {}
-    5 {}
-    6 {}
+#----------------------------------------------------------------------------------------------
+
+#Script running sequence
+function steps{
+    $services = entryPoint
+    $serv = menu1($services)
+    Clear-Host
+    details($serv)
+    menu2($serv)
 }
 
-Start-Sleep -seconds 10
-details($serv)
+#----------------------------------------------------------------------------------------------
+
+steps
 
 
 
